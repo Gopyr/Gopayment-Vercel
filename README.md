@@ -4,9 +4,9 @@ Infrastruktur payment gateway QRIS yang jalan di Vercel Serverless Functions. Re
 
 ## Preview
 
-![Tampilan halaman landing Gopayment](public/preview.png)
+![Form pembayaran Gopayment](public/preview.png)
 
-Halaman landing sederhana yang ikut di repo ini (render asli dari `public/index.html`, tanpa deploy).
+Halaman pembayaran: isi nama, keterangan, nominal, lalu QRIS muncul otomatis.
 
 ## Fitur
 
@@ -33,8 +33,8 @@ Halaman landing sederhana yang ikut di repo ini (render asli dari `public/index.
 │   ├── _gobiz.js               # client GoBiz (login + riwayat transaksi)
 │   └── _debug_webhook.js       # log request ke Discord (opsional)
 ├── public/
-│   ├── index.html              # halaman landing sederhana
-│   └── preview.png             # screenshot hasil render landing page
+│   ├── index.html              # halaman pembayaran (form + QRIS + polling status)
+│   └── preview.png             # screenshot hasil render halaman pembayaran
 ├── vercel.json                 # routing, security headers, fungsi config
 ├── package.json
 └── .env.example                # daftar semua env yang dibutuhkan

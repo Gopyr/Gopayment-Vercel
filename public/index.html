@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gopayment - Pembayaran QRIS di Vercel</title>
-  <meta name="description" content="Infrastruktur pembayaran QRIS yang jalan di Vercel Serverless Functions.">
+  <title>Gopayment - Pembayaran QRIS</title>
+  <meta name="description" content="Buat pembayaran QRIS dan selesaikan dalam hitungan menit.">
   <style>
     :root {
       --bg: #ffffff;
@@ -12,9 +12,12 @@
       --muted: #555555;
       --line: #e5e5e5;
       --accent: #00a651;
+      --accent-dark: #007a3d;
+      --panel: #f8f8f8;
+      --red: #c0392b;
+      --amber: #b9770e;
     }
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -22,59 +25,167 @@
       background: var(--bg);
       line-height: 1.6;
     }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+    .wrap { max-width: 560px; margin: 0 auto; padding: 0 20px; }
     header {
       border-bottom: 1px solid var(--line);
       padding: 18px 0;
+      margin-bottom: 36px;
     }
     .brand { font-weight: 700; font-size: 18px; letter-spacing: -0.02em; }
     .brand span { color: var(--accent); }
-    main { padding: 56px 0 80px; }
-    h1 { font-size: 34px; line-height: 1.25; letter-spacing: -0.03em; margin: 0 0 12px; }
-    p.lead { font-size: 18px; color: var(--muted); margin: 0 0 32px; }
-    .code {
-      background: #f6f6f6;
+    h1 { font-size: 26px; letter-spacing: -0.02em; margin: 0 0 6px; }
+    p.sub { color: var(--muted); margin: 0 0 28px; font-size: 15px; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 24px;
+      background: #fff;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 16px 0 6px;
+    }
+    label:first-of-type { margin-top: 0; }
+    input, textarea {
+      width: 100%;
+      padding: 11px 12px;
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 14px 16px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 13px;
-      overflow-x: auto;
-      margin: 8px 0 20px;
+      font: inherit;
+      font-size: 15px;
+      outline: none;
+      background: #fff;
+      color: var(--ink);
     }
-    h2 { font-size: 20px; margin: 36px 0 10px; letter-spacing: -0.02em; }
-    ul { margin: 8px 0 20px; padding-left: 22px; }
-    li { margin: 4px 0; }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    table {
+    input:focus, textarea:focus { border-color: var(--accent); }
+    input.err, textarea.err { border-color: var(--red); }
+    textarea { min-height: 72px; resize: vertical; }
+    .amount-input { position: relative; }
+    .currency {
+      position: absolute;
+      left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 13px;
+      pointer-events: none;
+    }
+    .amount-input input { padding-left: 46px; }
+    .btn {
       width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-      margin: 12px 0 24px;
+      margin-top: 20px;
+      padding: 12px;
+      border: 0;
+      border-radius: 8px;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
     }
-    th, td {
-      text-align: left;
-      border-bottom: 1px solid var(--line);
-      padding: 8px 10px;
+    .btn:hover { background: var(--accent-dark); }
+    .btn:disabled { opacity: .55; cursor: wait; }
+    .btn-ghost {
+      margin-top: 10px;
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid var(--line);
     }
-    th { background: #fafafa; }
-    code {
-      background: #f0f0f0;
-      border-radius: 4px;
-      padding: 1px 5px;
+    .btn-ghost:hover { background: var(--panel); }
+    .fine { margin: 14px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+    .hidden { display: none; }
+    .payer { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .payer .lbl { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+    .payer .name { font-size: 20px; font-weight: 700; margin-top: 2px; }
+    .payer .about { color: var(--muted); font-size: 13px; }
+    .breakdown { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+    .row { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); padding: 3px 0; }
+    .row strong { color: var(--ink); font-weight: 600; }
+    .row.total { border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 8px; font-size: 14px; }
+    .row.total strong { font-size: 17px; color: var(--accent-dark); }
+    .notice {
+      background: #fdf6e3;
+      border: 1px solid #f0e0b0;
+      color: #7a5c00;
+      border-radius: 8px;
+      padding: 10px 12px;
       font-size: 13px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      margin-bottom: 14px;
     }
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .qr-box img { width: min(100%, 220px); aspect-ratio: 1; display: block; }
+    .qr-hint { color: var(--muted); font-size: 12px; text-align: center; }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 10px 12px;
+      border: 1px solid;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .st-pending { color: #7a5c00; border-color: #f0e0b0; background: #fdf6e3; }
+    .st-checking { color: #1a5276; border-color: #aed6f1; background: #eaf2f8; }
+    .st-success { color: var(--accent-dark); border-color: #a9dfbf; background: #eafaf1; }
+    .st-timeout, .st-error { color: var(--red); border-color: #f5b7b1; background: #fdedec; }
+    .spinner {
+      width: 13px; height: 13px;
+      flex: 0 0 13px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .success { text-align: center; padding: 8px 0; }
+    .success-check {
+      width: 60px; height: 60px;
+      display: grid; place-items: center;
+      margin: 0 auto 14px;
+      border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 30px; font-weight: 700;
+    }
+    .success h2 { margin: 0 0 6px; font-size: 21px; }
+    .success p { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+    .receipt {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: left;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .receipt .rrow {
+      display: flex; justify-content: space-between; gap: 12px;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+    .receipt .rrow:last-child { border-bottom: 0; }
+    .receipt .k { color: var(--muted); }
+    .receipt .v { font-weight: 600; text-align: right; overflow-wrap: anywhere; max-width: 60%; }
     footer {
       border-top: 1px solid var(--line);
-      padding: 24px 0;
+      margin-top: 44px;
+      padding: 20px 0 30px;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 13px;
     }
-    @media (max-width: 600px) {
-      h1 { font-size: 28px; }
-      main { padding: 40px 0 60px; }
+    @media (max-width: 520px) {
+      .card { padding: 18px; }
+      h1 { font-size: 22px; }
     }
   </style>
 </head>
@@ -86,60 +197,238 @@
   </header>
 
   <main class="wrap">
-    <h1>Pembayaran QRIS di Vercel</h1>
-    <p class="lead">
-      Infrastruktur payment gateway yang jalan sepenuhnya di Vercel Serverless Functions.
-      Buat tagihan, tampilkan QRIS dinamis, dan konfirmasi pembayaran secara otomatis.
-    </p>
+    <h1>Buat pembayaran</h1>
+    <p class="sub">Masukkan detail tagihan, lalu bayar lewat QRIS.</p>
 
-    <h2>Endpoint</h2>
-    <table>
-      <tr><th>Method</th><th>Path</th><th>Fungsi</th></tr>
-      <tr><td><code>POST</code></td><td><code>/api/create-payment</code></td><td>Buat sesi pembayaran + QRIS dinamis</td></tr>
-      <tr><td><code>POST</code></td><td><code>/api/check-payment</code></td><td>Cek pembayaran masuk</td></tr>
-      <tr><td><code>GET</code></td><td><code>/api/status/:sessionId</code></td><td>Lihat status sesi</td></tr>
-      <tr><td><code>POST</code></td><td><code>/api/gateway/create</code></td><td>Buat sesi via API key (untuk integrasi eksternal)</td></tr>
-      <tr><td><code>GET</code></td><td><code>/api/gateway/status</code></td><td>Cek status via API key</td></tr>
-    </table>
+    <div class="card">
+      <!-- Form -->
+      <div id="form-view">
+        <label for="nama">Nama pembayar</label>
+        <input id="nama" type="text" placeholder="Contoh: Budi" maxlength="100" autocomplete="name">
 
-    <h2>Alur</h2>
-    <ul>
-      <li>Client kirim nama + nominal ke <code>/api/create-payment</code>.</li>
-      <li>Server bikin QRIS dinamis dari string QRIS statis merchant, plus pajak unik Rp 1-100 agar nominal gampang dicocokkan.</li>
-      <li>Client polling <code>/api/check-payment</code> tiap beberapa detik.</li>
-      <li>Server login ke GoBiz, tarik riwayat transaksi, cocokkan nominal, lalu tandai sesi sukses.</li>
-      <li>Notifikasi dikirim ke Discord webhook (opsional).</li>
-    </ul>
+        <label for="tentang">Keterangan</label>
+        <textarea id="tentang" placeholder="Contoh: bayar desain logo" maxlength="300"></textarea>
 
-    <h2>Deploy</h2>
-    <ol>
-      <li>Import repo ini ke <a href="https://vercel.com/new">vercel.com/new</a>.</li>
-      <li>Isi environment variables (lihat <code>.env.example</code>).</li>
-      <li>Deploy. Selesai.</li>
-    </ol>
+        <label for="nominal">Nominal</label>
+        <div class="amount-input">
+          <span class="currency">IDR</span>
+          <input id="nominal" type="number" min="1" max="100000000" placeholder="50000" inputmode="numeric">
+        </div>
 
-    <h2>Integrasi sederhana</h2>
-    <div class="code">POST /api/create-payment
-Content-Type: application/json
+        <button class="btn" id="pay-btn" onclick="submitPayment()">Buat kode pembayaran</button>
+        <p class="fine">Detail tagihan dipakai untuk verifikasi pembayaran.</p>
+      </div>
 
-{
-  "nama": "Naufal",
-  "tentang": "Bayar hosting September",
-  "nominal": 50000
-}</div>
-    <div class="code">{
-  "sessionId": "A1B2C3D4",
-  "qrisDataUrl": "data:image/png;base64,...",
-  "nominal": 50000,
-  "surcharge": 37,
-  "totalBayar": 50037
-}</div>
+      <!-- QRIS -->
+      <div id="qr-view" class="hidden">
+        <div class="payer">
+          <div class="lbl">Tagihan untuk</div>
+          <div class="name" id="disp-nama">-</div>
+          <div class="about" id="disp-tentang">-</div>
+        </div>
+        <div class="breakdown">
+          <div class="row"><span>Nominal</span><strong id="disp-nominal">-</strong></div>
+          <div class="row"><span>Kode unik</span><strong id="disp-sc">-</strong></div>
+          <div class="row total"><span>Total pembayaran</span><strong id="disp-total">-</strong></div>
+        </div>
+        <div class="notice">Transfer tepat sesuai total. Kode unik dipakai sistem untuk mencocokkan pembayaran kamu.</div>
+        <div class="qr-box">
+          <img id="qr-img" alt="QRIS payment code">
+          <div class="qr-hint">Scan pakai aplikasi yang mendukung QRIS (GoPay, OVO, m-banking, dll).</div>
+        </div>
+        <div id="status-box" class="status st-pending"><span class="spinner"></span><span>Menunggu pembayaran...</span></div>
+        <button class="btn btn-ghost" id="check-btn" onclick="manualCheck()">Cek pembayaran sekarang</button>
+        <button class="btn btn-ghost" id="back-btn" onclick="resetForm()">Buat tagihan baru</button>
+      </div>
+
+      <!-- Success -->
+      <div id="success-view" class="hidden">
+        <div class="success">
+          <div class="success-check">&#10003;</div>
+          <h2>Pembayaran berhasil</h2>
+          <p>Tagihan kamu sudah terverifikasi. Terima kasih.</p>
+          <div class="receipt">
+            <div class="rrow"><span class="k">Nominal</span><span class="v" id="res-nominal">-</span></div>
+            <div class="rrow"><span class="k">Kode unik</span><span class="v" id="res-sc">-</span></div>
+            <div class="rrow"><span class="k">Total dibayar</span><span class="v" id="res-total">-</span></div>
+            <div class="rrow"><span class="k">Keterangan</span><span class="v" id="res-tentang">-</span></div>
+            <div class="rrow"><span class="k">Bank</span><span class="v" id="res-issuer">-</span></div>
+            <div class="rrow"><span class="k">ID transaksi</span><span class="v" id="res-txid">-</span></div>
+            <div class="rrow"><span class="k">Waktu</span><span class="v" id="res-waktu">-</span></div>
+          </div>
+          <button class="btn btn-ghost" onclick="resetForm()">Buat tagihan baru</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <footer>
-    <div class="wrap">
-      Gopayment - infrastruktur pembayaran QRIS open source.
-    </div>
+    <div class="wrap">Gopayment - pembayaran QRIS di Vercel.</div>
   </footer>
+
+  <script>
+    let sessionId = null;
+    let isDone = false;
+    let isChecking = false;
+    let pollTimer = null;
+
+    const $ = id => document.getElementById(id);
+    const fmt = n => 'Rp\u00a0' + Number(n || 0).toLocaleString('id-ID');
+    const escapeHtml = v => String(v ?? '-').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function setStatus(type, text) {
+      const box = $('status-box');
+      box.className = 'status st-' + type;
+      box.innerHTML = '';
+      if (type === 'pending' || type === 'checking') {
+        const s = document.createElement('span');
+        s.className = 'spinner';
+        box.appendChild(s);
+      }
+      const label = document.createElement('span');
+      label.textContent = text || (type === 'pending' ? 'Menunggu pembayaran...' : 'Mengecek transaksi...');
+      box.appendChild(label);
+    }
+
+    async function submitPayment() {
+      const nama = $('nama').value.trim().replace(/[<>"']/g, '');
+      const tentang = $('tentang').value.trim().replace(/[<>"']/g, '');
+      const nominal = $('nominal').value.trim();
+
+      ['nama', 'tentang', 'nominal'].forEach(id => $(id).classList.remove('err'));
+      let firstErr = null;
+      if (!nama) firstErr = firstErr || 'nama';
+      if (!tentang) firstErr = firstErr || 'tentang';
+      if (!nominal || parseInt(nominal, 10) < 1) firstErr = firstErr || 'nominal';
+      if (firstErr) {
+        $('nama').classList.toggle('err', !nama);
+        $('tentang').classList.toggle('err', !tentang);
+        $('nominal').classList.toggle('err', !nominal || parseInt(nominal, 10) < 1);
+        $(firstErr).focus();
+        return;
+      }
+
+      const btn = $('pay-btn');
+      btn.disabled = true;
+      btn.textContent = 'Membuat tagihan...';
+
+      try {
+        const res = await fetch('/api/create-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nama, tentang, nominal }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Error ' + res.status);
+        sessionId = data.sessionId;
+        isDone = false;
+        showQR(nama, tentang, data);
+        startPoll();
+      } catch (e) {
+        alert(e.message);
+        btn.disabled = false;
+        btn.textContent = 'Buat kode pembayaran';
+      }
+    }
+
+    function showQR(nama, tentang, data) {
+      $('form-view').classList.add('hidden');
+      $('qr-view').classList.remove('hidden');
+      $('success-view').classList.add('hidden');
+      $('disp-nama').textContent = nama;
+      $('disp-tentang').textContent = tentang;
+      $('disp-nominal').textContent = fmt(data.nominal);
+      $('disp-sc').textContent = '+Rp\u00a0' + data.surcharge;
+      $('disp-total').textContent = fmt(data.totalBayar);
+      $('qr-img').src = data.qrisDataUrl;
+      setStatus('pending');
+    }
+
+    function startPoll() {
+      stopPoll();
+      setTimeout(() => { if (!isDone) checkPayment(false); }, 3000);
+      pollTimer = setInterval(() => { if (!isDone) checkPayment(false); }, 5000);
+    }
+    function stopPoll() { clearInterval(pollTimer); }
+
+    async function manualCheck() {
+      if (!isDone && !isChecking) await checkPayment(true);
+    }
+
+    async function checkPayment(manual) {
+      if (!sessionId || isDone || isChecking) return;
+      isChecking = true;
+      const btn = $('check-btn');
+      if (manual) {
+        btn.disabled = true;
+        btn.textContent = 'Mengecek...';
+        setStatus('checking', 'Mengecek transaksi ke server...');
+      }
+      try {
+        const res = await fetch('/api/check-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          if (manual) setStatus('error', data.error || 'Error ' + res.status);
+          return;
+        }
+        if (data.found) {
+          isDone = true;
+          stopPoll();
+          showSuccess(data.session);
+        } else if (data.timedOut) {
+          isDone = true;
+          stopPoll();
+          setStatus('timeout', 'Waktu pembayaran habis.');
+          btn.style.display = 'none';
+        } else if (manual) {
+          setStatus('error', 'Belum ditemukan. Pastikan bayar ' + fmt(data.looking_for) + '.');
+          setTimeout(() => { if (!isDone) setStatus('pending'); }, 3500);
+        }
+      } catch (e) {
+        if (manual) setStatus('error', 'Koneksi gagal. Coba lagi.');
+      } finally {
+        isChecking = false;
+        btn.disabled = false;
+        if (btn.style.display !== 'none') btn.textContent = 'Cek pembayaran sekarang';
+      }
+    }
+
+    function showSuccess(data) {
+      $('qr-view').classList.add('hidden');
+      $('success-view').classList.remove('hidden');
+      $('res-nominal').textContent = fmt(data.nominal);
+      $('res-sc').textContent = '+Rp\u00a0' + (data.surcharge || 0);
+      $('res-total').textContent = fmt(data.totalBayar);
+      $('res-tentang').textContent = data.tentang || '-';
+      $('res-issuer').textContent = data.issuer || '-';
+      $('res-txid').textContent = data.txId || '-';
+      $('res-waktu').textContent = data.waktu || '-';
+    }
+
+    function resetForm() {
+      stopPoll();
+      sessionId = null;
+      isDone = false;
+      isChecking = false;
+      $('form-view').classList.remove('hidden');
+      $('qr-view').classList.add('hidden');
+      $('success-view').classList.add('hidden');
+      const btn = $('pay-btn');
+      btn.disabled = false;
+      btn.textContent = 'Buat kode pembayaran';
+      $('nama').value = '';
+      $('tentang').value = '';
+      $('nominal').value = '';
+      $('check-btn').style.display = '';
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !$('form-view').classList.contains('hidden')) submitPayment();
+    });
+  </script>
 </body>
 </html>
