@@ -2,6 +2,12 @@
 
 Infrastruktur payment gateway QRIS yang jalan di Vercel Serverless Functions. Repo ini versi publik dari gateway pembayaran, berisi logika inti tanpa kredensial asli. Semua rahasia disimpan di environment variables, bukan di kode.
 
+## Preview
+
+![Tampilan halaman landing Gopayment](public/preview.png)
+
+Halaman landing sederhana yang ikut di repo ini (render asli dari `public/index.html`, tanpa deploy).
+
 ## Fitur
 
 - Buat sesi pembayaran dengan QRIS dinamis dari string QRIS statis merchant
@@ -27,7 +33,8 @@ Infrastruktur payment gateway QRIS yang jalan di Vercel Serverless Functions. Re
 │   ├── _gobiz.js               # client GoBiz (login + riwayat transaksi)
 │   └── _debug_webhook.js       # log request ke Discord (opsional)
 ├── public/
-│   └── index.html              # halaman landing sederhana
+│   ├── index.html              # halaman landing sederhana
+│   └── preview.png             # screenshot hasil render landing page
 ├── vercel.json                 # routing, security headers, fungsi config
 ├── package.json
 └── .env.example                # daftar semua env yang dibutuhkan
