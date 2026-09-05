@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "functions": {
+    "api/**/*.js": { "maxDuration": 30 }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/",                              "destination": "/public/index.html" },
+    { "source": "/api/create-payment",            "destination": "/api/create-payment" },
+    { "source": "/api/check-payment",             "destination": "/api/check-payment" },
+    { "source": "/api/status/:sessionId",         "destination": "/api/status/[sessionId]" },
+    { "source": "/api/gateway/create",            "destination": "/api/gateway?action=create" },
+    { "source": "/api/gateway/status",            "destination": "/api/gateway?action=status" },
+    { "source": "/api/gateway/payment",           "destination": "/api/gateway?action=payment" }
+  ],
+  "cleanUrls": true
+}

@@ -1,0 +1,15 @@
+{
+  "name": "gopayment-vercel",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "check": "node --check api/gateway.js && node --check api/create-payment.js && node --check api/check-payment.js && node --check 'api/status/[sessionId].js'"
+  },
+  "dependencies": {
+    "crc": "^4.3.2",
+    "moment-timezone": "^0.5.45",
+    "qrcode": "^1.5.4"
+  }
+}
