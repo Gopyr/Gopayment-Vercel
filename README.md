@@ -47,7 +47,7 @@ Halaman pembayaran: isi nama, keterangan, nominal, lalu QRIS muncul otomatis.
 3. Client tampilkan QRIS, buyer scan dan bayar lewat aplikasi bank.
 4. Client polling `POST /api/check-payment` tiap beberapa detik.
 5. Server login GoBiz, tarik riwayat, cari nominal yang cocok.
-6. Ketemu -> sesi ditandai sukses, Discord webhook dikirim, callback gateway dipanggil.
+6. Kalau ketemu, sesi ditandai sukses, Discord webhook dikirim, dan callback gateway dipanggil.
 
 ## Cara deploy
 
